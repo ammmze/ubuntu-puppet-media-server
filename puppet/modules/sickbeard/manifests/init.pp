@@ -40,7 +40,7 @@ class sickbeard {
         ensure      => running,
         enable      => true,
         hasstatus   => false,
-        hasrestart  => true,
+        hasrestart  => false,
         require     => [ Package['python-cheetah'], Exec['updateSickbeardInit'] ],
     }
     
