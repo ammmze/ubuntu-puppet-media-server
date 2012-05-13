@@ -1,4 +1,4 @@
-class plex { 
+class plex ($port = "32400") { 
 
     exec{'echo "deb http://www.plexapp.com/repo lucid main" > /etc/apt/sources.list.d/plex.list':
         alias   => 'addPlexToSources',

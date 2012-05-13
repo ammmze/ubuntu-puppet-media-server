@@ -24,27 +24,35 @@ class mediaserver {
 
     class {"plex":
         require     => [ User['mediaserver'] ],
+        port    => "32400",
     }
 
     # SabNZBd+
 
     class {"sabnzbd":
         require     => [ User['mediaserver'] ],
+        port    => "8080",
     }
 
     # Sickbeard
 
     class {"sickbeard":
         require     => [ User['mediaserver'] ],
+        port    => "8081",
     }
 
     # CouchPotato
 
     class {"couchpotato":
         require     => [ User['mediaserver'] ],
+        port    => "8082",
     }
 
-    class {"cups":}
+    # CUPS
+
+    class {"cups":
+        port    => "631",
+    }
 
 }
 
@@ -79,5 +87,31 @@ define line($file, $line, $ensure = 'present') {
                 onlyif => "/usr/bin/test `/bin/grep '${line}' '${file}' | /bin/grep -v '^#' | /usr/bin/wc -l` -ne 0"
             }
         }
+    }
+}
+
+define delete_lines($file, $pattern) {
+    exec { "/bin/sed -i -r -e '/$pattern/d' $file":
+        onlyif => "/bin/grep -E '$pattern' '$file'",
+    }
+}
+
+define replace($file, $pattern, $replacement, $user) {
+    $pattern_no_slashes = $pattern
+    $replacement_no_slashes = $replacement
+    #$pattern_no_slashes = slash_escape($pattern)
+    #$replacement_no_slashes = slash_escape($replacement)
+
+    exec { "/usr/bin/perl -pi -e 's/$pattern_no_slashes/$replacement_no_slashes/' '$file'":
+        onlyif => "/usr/bin/perl -ne 'BEGIN { \$ret = 1; } \$ret = 0 if /$pattern_no_slashes/ && ! /$replacement_no_slashes/ ; END { exit \$ret; }' '$file'",
+        user    => $user,
+    }
+}
+
+define prepend_if_no_such_line($file, $line, $refreshonly = 'false') {
+    exec { "/usr/bin/perl -p0i -e 's/^/$line\n/;' '$file'":
+        unless      => "/bin/grep -Fxqe '$line' '$file'",
+        path        => "/bin",
+        refreshonly => $refreshonly,
     }
 }

@@ -1,4 +1,4 @@
-class couchpotato { 
+class couchpotato ($port = "8082") { 
 
     exec{'git clone https://github.com/RuudBurger/CouchPotato.git /home/mediaserver/.couchpotato':
         alias       => 'downloadCouchPotato',
@@ -31,10 +31,13 @@ class couchpotato {
         user    => 'root',
         require => Exec['copyCouchPotatoDefault'],
     }
-    exec{'sed -i "s/PORT=.*/PORT=8082/" /etc/default/couchpotato':
-        alias       => 'updateCouchPotatoDefaultPort',
-        user    => 'root',
-        require => Exec['copyCouchPotatoDefault'],
+    replace { "CouchPotatoPort":
+        file            => "/etc/default/couchpotato",
+        pattern         => "PORT=.*",
+        replacement     => "PORT=$port",
+        alias           => 'updateCouchPotatoDefaultPort',
+        user            => 'root',
+        require         => Exec['copyCouchPotatoDefault'],
     }
     exec{'sed -i "s/WEB_UPDATE=.*/WEB_UPDATE=1/" /etc/default/couchpotato':
         alias       => 'updateCouchPotatoDefaultWebUpdate',
@@ -43,8 +46,9 @@ class couchpotato {
     }
     exec{'update-rc.d couchpotato defaults':
         alias       => 'updateCouchPotatoInit',
-        require     => [ Exec['updateCouchPotatoDefaultAppPath'], Exec['updateCouchPotatoDefaultRunAs'], Exec['updateCouchPotatoDefaultEnableDaemon'], Exec['updateCouchPotatoDefaultPort'], Exec['updateCouchPotatoDefaultWebUpdate'] ],
+        require     => [ Exec['updateCouchPotatoDefaultAppPath'], Exec['updateCouchPotatoDefaultRunAs'], Exec['updateCouchPotatoDefaultEnableDaemon'], Replace['updateCouchPotatoDefaultPort'], Exec['updateCouchPotatoDefaultWebUpdate'] ],
         user        => 'root',
+        notify      => Service['couchpotato'],
     }
 
     service{'couchpotato':

@@ -1,4 +1,4 @@
-class sickbeard { 
+class sickbeard ($port = "8081") { 
 
     package {"python-cheetah":
         ensure  => latest
@@ -34,13 +34,33 @@ class sickbeard {
         alias       => 'updateSickbeardInit',
         require     => [ Exec['updateSickbeardInitAppPath'], Exec['updateSickbeardInitRunAs'], Exec['updateSickbeardInitDataDir'] ],
         user        => 'root',
+        notify      => Service['sickbeard'],
+    }
+
+    exec {"/etc/init.d/sickbeard stop":
+        alias       => "stopSickbeard",
+        user        => "root",
+    }
+
+    exec {"/etc/init.d/sickbeard start":
+        alias       => "startSickbeard",
+        user        => "root",
+    }
+
+    replace {"SickbeardPort":
+        file        => "/home/mediaserver/.sickbeard/config.ini",
+        pattern     => "web_port = .*",
+        replacement => "web_port = $port",
+        user        => "root",
+        notify      => Exec['startSickbeard'],
+        require     => Exec['stopSickbeard'],
     }
 
     service{'sickbeard':
         ensure      => running,
         enable      => true,
         hasstatus   => false,
-        hasrestart  => true,
+        hasrestart  => false,
         require     => [ Package['python-cheetah'], Exec['updateSickbeardInit'] ],
     }
     

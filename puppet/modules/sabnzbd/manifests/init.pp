@@ -1,4 +1,4 @@
-class sabnzbd { 
+class sabnzbd ($port = "8080") { 
 
     exec{'add-apt-repository ppa:jcfp/ppa':
         alias   => 'addSabnzbdPPA',

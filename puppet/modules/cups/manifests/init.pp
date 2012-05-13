@@ -1,6 +1,7 @@
-class cups {
+class cups ($port = "631") {
 	package {"cups":
-		ensure 	=> latest
+		ensure 	=> latest,
+        require => Exec['aptUpdate'],
 	}
 
 	service {"cups":
@@ -11,18 +12,10 @@ class cups {
       	require    => Package['cups'],
 	}
 
-	#exec {"sed -i 's/^Listen localhost/#Listen localhost/' /etc/cups/cupsd.conf":
-	#	user 		=> "root",
-	#	require 	=> Package['cups'],
-	#	notify 		=> Service['cups'],
-	#}
-
-	#exec {"sed -i '/Listen localhost/ i Port 631' /etc/cups/cupsd.conf":
-	#	user		=> "root",
-	#	require		=> Package['cups'],
-	#	onlyif 		=> "/usr/bin/test `/bin/grep 'Port 631' '/etc/cups/cupsd.conf' | /bin/grep -v '^#' | /usr/bin/wc -l` -ne 0",
-	#	notify 		=> Service['cups'],
-	#}
+    delete_lines {"DeletePorts":
+        file    => "/etc/cups/cupsd.conf",
+        pattern => "Port *"
+    }
 
 	line {"CupsListen":
 		file 	=> "/etc/cups/cupsd.conf",
@@ -32,17 +25,18 @@ class cups {
 		notify 	=> Service['cups']
 	}
 
-	line {"CupsPort631":
+	line {"CupsPort":
 		file 	=> "/etc/cups/cupsd.conf",
-		line 	=> "Port 631",
+		line 	=> "Port $port",
 		ensure 	=> present,
-		require => Package['cups'],
+		require => [ Package['cups'], Delete_lines['DeletePorts'] ],
 		notify 	=> Service['cups'],
 	}
 
     exec {"cupsctl --remote-admin":
         user    => "root",
         notify  => Service['cups'],
+        require => Package['cups'],
     }
 
 }
