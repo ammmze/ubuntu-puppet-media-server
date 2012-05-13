@@ -40,4 +40,9 @@ class cups {
 		notify 	=> Service['cups'],
 	}
 
+    exec {"cupsctl --remote-admin":
+        user    => "root",
+        notify  => Service['cups'],
+    }
+
 }
